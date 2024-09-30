@@ -1,7 +1,7 @@
 import makeWASocket, {
   DisconnectReason,
   useMultiFileAuthState,
-  AnyMessageContent,
+  proto,
 } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
 import * as qrcode from "qrcode-terminal";
@@ -12,10 +12,8 @@ async function startBot() {
   const sock = makeWASocket({
     auth: state,
     printQRInTerminal: true,
-    // Si no necesitas la funcionalidad getMessage, simplemente retornamos undefined
     getMessage: async (key) => {
-      // Podrías implementar lógica aquí para obtener un mensaje si lo necesitas.
-      return undefined; // Retorna undefined como el valor esperado.
+      return undefined;
     },
   });
 
@@ -29,7 +27,7 @@ async function startBot() {
         DisconnectReason.loggedOut;
       console.log("Conexión cerrada, reconectar:", shouldReconnect);
       if (shouldReconnect) {
-        startBot();
+        startBot(); // Intentar reconectar si no fue una desconexión voluntaria
       }
     } else if (connection === "open") {
       console.log("Conectado a WhatsApp");
@@ -55,8 +53,11 @@ async function startBot() {
 
     console.log(`Mensaje de ${from}: ${body}`);
 
-    // Flujo del chatbot
-    if (body === "1") {
+    // Si es el primer mensaje o si el usuario dice "hola"
+    if (!body || body.toLowerCase() === "hola") {
+      // El bot responde con el mensaje de bienvenida y opciones
+      await sendButtonMessage(sock, from);
+    } else if (body === "1") {
       await sendMessage(
         sock,
         from,
@@ -68,15 +69,36 @@ async function startBot() {
       await sendMessage(
         sock,
         from,
-        "¡Hola! Gracias por comunicarte con nosotros. Elige una opción:\n1️⃣ Información sobre productos\n2️⃣ Soporte técnico"
+        "No entendí tu respuesta. Por favor elige una opción:"
       );
+      await sendButtonMessage(sock, from);
     }
   });
 }
 
-// Función auxiliar para enviar mensajes
+// Función auxiliar para enviar botones simplificados
+async function sendButtonMessage(sock: any, jid: string) {
+  const buttons = [
+    {
+      buttonId: "1",
+      buttonText: { displayText: "Información sobre productos" },
+      type: 1,
+    },
+    { buttonId: "2", buttonText: { displayText: "Soporte técnico" }, type: 1 },
+  ];
+
+  const buttonMessage = {
+    text: "¡Hola! Gracias por comunicarte con nosotros. Elige una opción:",
+    buttons: buttons, // Solo los botones sin headers ni footers
+    headerType: 1, // Encabezado de tipo texto
+  };
+
+  await sock.sendMessage(jid, buttonMessage);
+}
+
+// Función auxiliar para enviar mensajes de texto simples
 async function sendMessage(sock: any, jid: string, content: string) {
-  const message: AnyMessageContent = { text: content };
+  const message = { text: content };
   await sock.sendMessage(jid, message);
 }
 

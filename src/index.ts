@@ -6,6 +6,13 @@ import makeWASocket, {
 import { Boom } from "@hapi/boom";
 import * as qrcode from "qrcode-terminal";
 
+const express = require("express");
+const app = express();
+const port = 3000;
+
+// const router = require("./routes/routes");
+// router(app);
+
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("auth_info");
 
@@ -104,3 +111,7 @@ async function sendMessage(sock: any, jid: string, content: string) {
 
 // Iniciar el bot
 startBot().catch((err) => console.error("Error al iniciar el bot:", err));
+
+app.listen(port, () => {
+  console.log(`Running on port ${port}`);
+});

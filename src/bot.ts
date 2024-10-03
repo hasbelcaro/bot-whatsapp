@@ -4,7 +4,9 @@ import makeWASocket, {
   proto,
 } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
-import * as qrcode from "qrcode-terminal";
+// import * as qrcode from "qrcode-terminal";
+import * as QRCode from "qrcode";
+import fs from "fs";
 
 // Diccionario para almacenar el estado del flujo de conversación de cada usuario
 const userSteps: { [key: string]: any } = {};
@@ -22,7 +24,7 @@ export async function startBot() {
   });
 
   // Manejar el estado de la conexión
-  sock.ev.on("connection.update", (update) => {
+  sock.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect, qr } = update;
 
     if (connection === "close") {
@@ -38,7 +40,17 @@ export async function startBot() {
     }
 
     if (qr) {
-      qrcode.generate(qr, { small: true });
+      // Generar QR en base64
+      // const qrCode = await qrcode.generate(qr, { small: true });
+
+      // Guardar QR como imagen
+      // fs.writeFileSync("./public/qr.html", `<img src="${qrCode}" />`);
+
+      const qrImagePath = "./public/assets/qr.png";
+      QRCode.toFile(qrImagePath, qr, (err) => {
+        if (err) throw err;
+        console.log("QR code saved at:", qrImagePath);
+      });
     }
   });
 

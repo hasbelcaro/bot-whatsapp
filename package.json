@@ -2,9 +2,10 @@
   "name": "sodebot",
   "packageManager": "yarn@3.6.4",
   "dependencies": {
+    "@types/qrcode": "^1.5.5",
     "@whiskeysockets/baileys": "^6.7.8",
     "express": "^4.21.0",
-    "qrcode-terminal": "^0.12.0"
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",

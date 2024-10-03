@@ -6,6 +6,9 @@ import makeWASocket, {
 import { Boom } from "@hapi/boom";
 import * as qrcode from "qrcode-terminal";
 
+// Diccionario para almacenar el estado del flujo de conversación de cada usuario
+const userSteps: { [key: string]: any } = {};
+
 // Función principal para iniciar el bot
 export async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("auth_info");
@@ -47,13 +50,6 @@ export async function startBot() {
     if (!message.message || message.key.fromMe) return;
 
     const from = message.key.remoteJid!;
-
-    // Omitir mensajes provenientes de grupos
-    if (from.endsWith("@g.us")) {
-      console.log("Mensaje de grupo ignorado:", from);
-      return; // Ignorar el mensaje y no continuar procesándolo
-    }
-
     const body =
       message.message.conversation ||
       message.message.extendedTextMessage?.text ||
@@ -61,19 +57,116 @@ export async function startBot() {
 
     console.log(`Mensaje de ${from}: ${body}`);
 
-    // Si es el primer mensaje o si el usuario dice "hola"
-    if (!body || body.toLowerCase() === "hola") {
+    // Si el usuario ya está en el flujo de soporte técnico, continuamos ese flujo
+    if (userSteps[from]?.step) {
+      await handleSupportFlow(sock, from, body);
+    } else if (body.toLowerCase() === "hola") {
+      // Iniciar la conversación con opciones
+      await sendGreeting(sock, from);
+    } else if (body === "1") {
+      // Iniciar el flujo de soporte técnico
+      userSteps[from] = { step: "start" };
+      await handleSupportFlow(sock, from, body);
+    } else if (body.toLowerCase() === "gracias") {
+      // Responder cuando el usuario dice "gracias"
       await sendMessage(
         sock,
         from,
-        "¡Hola! Gracias por comunicarte con nosotros."
+        "De nada. Si necesitas más ayuda, no dudes en comunicarte nuevamente. Puedes iniciar una nueva conversación en cualquier momento."
+      );
+    } else {
+      // Manejo de opciones inválidas
+      await sendMessage(
+        sock,
+        from,
+        'Por favor selecciona una opción válida respondiendo con el número "1" para Soporte Técnico.'
       );
     }
   });
 }
 
-// Función auxiliar para enviar mensajes de texto (también exportada)
+// Función auxiliar para enviar mensajes de texto
 export async function sendMessage(sock: any, jid: string, content: string) {
   const message = { text: content };
   await sock.sendMessage(jid, message);
+}
+
+// Función para manejar el flujo de soporte técnico
+async function handleSupportFlow(sock: any, from: string, body: string) {
+  const currentStep = userSteps[from]?.step || "start";
+
+  switch (currentStep) {
+    case "start":
+      userSteps[from].step = "name";
+      await sendMessage(
+        sock,
+        from,
+        "Bienvenido a soporte técnico. ¿Cuál es tu nombre?"
+      );
+      break;
+
+    case "name":
+      userSteps[from].name = body;
+      userSteps[from].step = "email";
+      await sendMessage(sock, from, "Gracias. ¿Cuál es tu correo electrónico?");
+      break;
+
+    case "email":
+      userSteps[from].email = body;
+      userSteps[from].step = "company";
+      await sendMessage(sock, from, "Perfecto. ¿Para qué empresa trabajas?");
+      break;
+
+    case "company":
+      userSteps[from].company = body;
+      userSteps[from].step = "software";
+      await sendMessage(sock, from, "¿Qué software estás utilizando?");
+      break;
+
+    case "software":
+      userSteps[from].software = body;
+      userSteps[from].step = "description";
+      await sendMessage(
+        sock,
+        from,
+        "Describe el problema que estás experimentando."
+      );
+      break;
+
+    case "description":
+      userSteps[from].description = body;
+      await confirmSupportData(sock, from);
+      break;
+  }
+}
+
+// Función para confirmar los datos y finalizar el flujo
+async function confirmSupportData(sock: any, from: string) {
+  const { name, email, company, software, description } = userSteps[from];
+  const phoneNumber = from.split("@")[0]; // Extraer el número de teléfono
+
+  const confirmationMessage =
+    `Gracias ${name}, hemos recibido tu solicitud de soporte.\n\n` +
+    `Detalles proporcionados:\n` +
+    `Nombre: ${name}\n` +
+    `Correo: ${email}\n` +
+    `Empresa: ${company}\n` +
+    `Software: ${software}\n` +
+    `Descripción: ${description}\n` +
+    `Número de teléfono: ${phoneNumber}\n\n` +
+    `Un representante de soporte se pondrá en contacto contigo pronto.`;
+
+  await sendMessage(sock, from, confirmationMessage);
+
+  // Limpiar el flujo del usuario
+  delete userSteps[from];
+}
+
+// Función para enviar un saludo inicial y mostrar las opciones
+async function sendGreeting(sock: any, from: string) {
+  const greetingMessage =
+    "Hola, ¿cómo te podemos ayudar hoy? Por favor selecciona una opción respondiendo con el número correspondiente:\n" +
+    "1. Soporte Técnico";
+
+  await sendMessage(sock, from, greetingMessage);
 }

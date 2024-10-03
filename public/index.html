@@ -79,17 +79,23 @@
       </div>
       <div class="right-section">
         <div class="qr-box">
-          <img src="assets/qr.png" alt="QR Code" />
+          <img id="qr-image" src="assets/qr.png" alt="QR Code" />
           <!-- <img src="https://via.placeholder.com/250" alt="QR Code" /> -->
-          <!-- <iframe
-            src="qr.html"
-            frameborder="0"
-            width="250"
-            height="250"
-          ></iframe> -->
           <p>Escanea este QR en tu celular</p>
         </div>
       </div>
     </div>
+
+    <script>
+      const socket = new WebSocket("ws://localhost:8080");
+
+      socket.onmessage = function (event) {
+        // Actualiza la imagen QR al recibirla
+        document.getElementById("qr-image").src =
+          "/assets/qr.png?" + new Date().getTime();
+
+        console.log("QR actualizado");
+      };
+    </script>
   </body>
 </html>

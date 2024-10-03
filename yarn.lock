@@ -323,6 +323,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/ws@npm:^8.5.12":
+  version: 8.5.12
+  resolution: "@types/ws@npm:8.5.12"
+  dependencies:
+    "@types/node": "*"
+  checksum: ddefb6ad1671f70ce73b38a5f47f471d4d493864fca7c51f002a86e5993d031294201c5dced6d5018fb8905ad46888d65c7f20dd54fc165910b69f42fba9a6d0
+  languageName: node
+  linkType: hard
+
 "@wasm-audio-decoders/common@npm:9.0.5":
   version: 9.0.5
   resolution: "@wasm-audio-decoders/common@npm:9.0.5"
@@ -1680,11 +1689,13 @@ __metadata:
     "@types/node": ^22.7.4
     "@types/qrcode": ^1.5.5
     "@types/qrcode-terminal": ^0.12.2
+    "@types/ws": ^8.5.12
     "@whiskeysockets/baileys": ^6.7.8
     express: ^4.21.0
     qrcode: ^1.5.4
     ts-node: ^10.9.2
     typescript: ^5.6.2
+    ws: ^8.18.0
   languageName: unknown
   linkType: soft
 
@@ -1927,7 +1938,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ws@npm:^8.13.0":
+"ws@npm:^8.13.0, ws@npm:^8.18.0":
   version: 8.18.0
   resolution: "ws@npm:8.18.0"
   peerDependencies:

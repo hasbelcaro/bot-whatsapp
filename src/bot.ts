@@ -6,7 +6,11 @@ import makeWASocket, {
 import { Boom } from "@hapi/boom";
 // import * as qrcode from "qrcode-terminal";
 import * as QRCode from "qrcode";
+import WebSocket, { WebSocketServer } from "ws";
 import fs from "fs";
+
+// Puerto para el websockets
+const wss = new WebSocketServer({ port: 8080 });
 
 // Diccionario para almacenar el estado del flujo de conversación de cada usuario
 const userSteps: { [key: string]: any } = {};
@@ -50,6 +54,13 @@ export async function startBot() {
       QRCode.toFile(qrImagePath, qr, (err) => {
         if (err) throw err;
         console.log("QR code saved at:", qrImagePath);
+
+        // Enviar QR a los clientes conectados
+        wss.clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(qrImagePath);
+          }
+        });
       });
     }
   });
